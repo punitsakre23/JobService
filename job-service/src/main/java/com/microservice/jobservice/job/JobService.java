@@ -1,10 +1,12 @@
 package com.microservice.jobservice.job;
 
+import com.microservice.jobservice.job.dto.JobWithCompanyDTO;
+
 import java.util.List;
 
 public interface JobService {
 
-    List<Job> findAll();
+    List<JobWithCompanyDTO> findAll();
 
     void createJob(Job job);
 

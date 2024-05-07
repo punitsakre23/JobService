@@ -3,8 +3,12 @@ package com.microservice.jobservice.job.impl;
 import com.microservice.jobservice.job.Job;
 import com.microservice.jobservice.job.JobRepository;
 import com.microservice.jobservice.job.JobService;
+import com.microservice.jobservice.job.dto.JobWithCompanyDTO;
+import com.microservice.jobservice.job.external.Company;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -23,8 +27,20 @@ public class JobServiceImpl implements JobService {
      * @return List<Job>
      */
     @Override
-    public List<Job> findAll() {
-        return jobRepository.findAll();
+    public List<JobWithCompanyDTO> findAll() {
+        List<Job> jobs = jobRepository.findAll();
+        List<JobWithCompanyDTO> jobWithCompanyDTOs = new ArrayList<>();
+        RestTemplate restTemplate = new RestTemplate();
+
+        Optional.ofNullable(jobs).ifPresent(jobDetail -> jobDetail.forEach(job -> {
+            Company company = restTemplate.getForObject("http://localhost:8081/companies/" + job.getCompanyId(), Company.class);
+            JobWithCompanyDTO dto = new JobWithCompanyDTO();
+            dto.setJob(job);
+            dto.setCompany(company);
+            jobWithCompanyDTOs.add(dto);
+        }));
+
+        return jobWithCompanyDTOs;
     }
 
     /**

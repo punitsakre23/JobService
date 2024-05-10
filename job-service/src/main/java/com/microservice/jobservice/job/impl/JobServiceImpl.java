@@ -10,6 +10,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 @Service
@@ -59,8 +60,16 @@ public class JobServiceImpl implements JobService {
      * @return Job
      */
     @Override
-    public Job getJobById(Long id) {
-        return jobRepository.findById(id).orElse(null);
+    public JobWithCompanyDTO getJobById(Long id) {
+        Job job = jobRepository.findById(id).orElse(null);
+        if (Objects.nonNull(job)) {
+            Company company = restTemplate.getForObject("http://COMPANY-SERVICE:8081/companies/" + job.getCompanyId(), Company.class);
+            JobWithCompanyDTO dto = new JobWithCompanyDTO();
+            dto.setJob(job);
+            dto.setCompany(company);
+            return dto;
+        }
+        return null;
     }
 
     /**

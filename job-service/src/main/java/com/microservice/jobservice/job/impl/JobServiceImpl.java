@@ -16,9 +16,11 @@ import java.util.Optional;
 public class JobServiceImpl implements JobService {
 
     private final JobRepository jobRepository;
+    private final RestTemplate restTemplate;
 
-    public JobServiceImpl(JobRepository jobRepository) {
+    public JobServiceImpl(JobRepository jobRepository, RestTemplate restTemplate) {
         this.jobRepository = jobRepository;
+        this.restTemplate = restTemplate;
     }
 
     /**
@@ -30,10 +32,9 @@ public class JobServiceImpl implements JobService {
     public List<JobWithCompanyDTO> findAll() {
         List<Job> jobs = jobRepository.findAll();
         List<JobWithCompanyDTO> jobWithCompanyDTOs = new ArrayList<>();
-        RestTemplate restTemplate = new RestTemplate();
 
         Optional.ofNullable(jobs).ifPresent(jobDetail -> jobDetail.forEach(job -> {
-            Company company = restTemplate.getForObject("http://localhost:8081/companies/" + job.getCompanyId(), Company.class);
+            Company company = restTemplate.getForObject("http://COMPANY-SERVICE:8081/companies/" + job.getCompanyId(), Company.class);
             JobWithCompanyDTO dto = new JobWithCompanyDTO();
             dto.setJob(job);
             dto.setCompany(company);

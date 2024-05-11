@@ -3,15 +3,14 @@ package com.microservice.jobservice.job.impl;
 import com.microservice.jobservice.job.Job;
 import com.microservice.jobservice.job.JobRepository;
 import com.microservice.jobservice.job.JobService;
+import com.microservice.jobservice.job.client.CompanyClient;
+import com.microservice.jobservice.job.client.ReviewClient;
 import com.microservice.jobservice.job.dto.JobDTO;
 import com.microservice.jobservice.job.external.Company;
 import com.microservice.jobservice.job.external.Review;
 import com.microservice.jobservice.job.mapper.JobMapper;
-import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
+import jakarta.ws.rs.NotFoundException;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,12 +21,17 @@ import java.util.Optional;
 public class JobServiceImpl implements JobService {
 
     private final JobRepository jobRepository;
-    private final RestTemplate restTemplate;
+    private final CompanyClient companyClient;
+    private final ReviewClient reviewClient;
     private final JobMapper jobMapper;
 
-    public JobServiceImpl(JobRepository jobRepository, RestTemplate restTemplate, JobMapper jobMapper) {
+    public JobServiceImpl(JobRepository jobRepository,
+                          CompanyClient companyClient,
+                          ReviewClient reviewClient,
+                          JobMapper jobMapper) {
         this.jobRepository = jobRepository;
-        this.restTemplate = restTemplate;
+        this.companyClient = companyClient;
+        this.reviewClient = reviewClient;
         this.jobMapper = jobMapper;
     }
 
@@ -71,17 +75,17 @@ public class JobServiceImpl implements JobService {
             Company company = getCompanyDetailsById(job.getCompanyId());
             List<Review> reviews = getReviewsByCompanyId(job.getCompanyId());
             return jobMapper.mapToDto(job, company, reviews);
+        } else {
+            throw new NotFoundException();
         }
-        return null;
     }
 
     private List<Review> getReviewsByCompanyId(Long companyId) {
-        ResponseEntity<List<Review>> review = restTemplate.exchange("http://REVIEW-SERVICE/reviews?companyId=" + companyId, HttpMethod.GET, null, new ParameterizedTypeReference<List<Review>>() {});
-        return review.getBody();
+        return reviewClient.getReviewsByCompanyId(companyId);
     }
 
     private Company getCompanyDetailsById(Long companyId) {
-        return restTemplate.getForObject("http://COMPANY-SERVICE:8081/companies/" + companyId, Company.class);
+        return companyClient.getCompanyById(companyId);
     }
 
     /**

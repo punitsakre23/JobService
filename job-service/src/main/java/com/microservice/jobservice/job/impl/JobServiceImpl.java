@@ -5,6 +5,7 @@ import com.microservice.jobservice.job.JobRepository;
 import com.microservice.jobservice.job.JobService;
 import com.microservice.jobservice.job.dto.JobWithCompanyDTO;
 import com.microservice.jobservice.job.external.Company;
+import com.microservice.jobservice.job.mapper.JobMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -18,10 +19,12 @@ public class JobServiceImpl implements JobService {
 
     private final JobRepository jobRepository;
     private final RestTemplate restTemplate;
+    private final JobMapper jobMapper;
 
-    public JobServiceImpl(JobRepository jobRepository, RestTemplate restTemplate) {
+    public JobServiceImpl(JobRepository jobRepository, RestTemplate restTemplate, JobMapper jobMapper) {
         this.jobRepository = jobRepository;
         this.restTemplate = restTemplate;
+        this.jobMapper = jobMapper;
     }
 
     /**
@@ -36,9 +39,7 @@ public class JobServiceImpl implements JobService {
 
         Optional.ofNullable(jobs).ifPresent(jobDetail -> jobDetail.forEach(job -> {
             Company company = restTemplate.getForObject("http://COMPANY-SERVICE:8081/companies/" + job.getCompanyId(), Company.class);
-            JobWithCompanyDTO dto = new JobWithCompanyDTO();
-            dto.setJob(job);
-            dto.setCompany(company);
+            JobWithCompanyDTO dto = jobMapper.mapToDto(job, company);
             jobWithCompanyDTOs.add(dto);
         }));
 
@@ -64,10 +65,7 @@ public class JobServiceImpl implements JobService {
         Job job = jobRepository.findById(id).orElse(null);
         if (Objects.nonNull(job)) {
             Company company = restTemplate.getForObject("http://COMPANY-SERVICE:8081/companies/" + job.getCompanyId(), Company.class);
-            JobWithCompanyDTO dto = new JobWithCompanyDTO();
-            dto.setJob(job);
-            dto.setCompany(company);
-            return dto;
+            return jobMapper.mapToDto(job, company);
         }
         return null;
     }

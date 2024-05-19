@@ -9,6 +9,8 @@ import com.microservice.jobservice.job.dto.JobDTO;
 import com.microservice.jobservice.job.external.Company;
 import com.microservice.jobservice.job.external.Review;
 import com.microservice.jobservice.job.mapper.JobMapper;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 import jakarta.ws.rs.NotFoundException;
 import org.springframework.stereotype.Service;
 
@@ -24,6 +26,7 @@ public class JobServiceImpl implements JobService {
     private final CompanyClient companyClient;
     private final ReviewClient reviewClient;
     private final JobMapper jobMapper;
+    int attempts = 0;
 
     public JobServiceImpl(JobRepository jobRepository,
                           CompanyClient companyClient,
@@ -41,7 +44,10 @@ public class JobServiceImpl implements JobService {
      * @return List<Job>
      */
     @Override
+//    @CircuitBreaker(name = "companyBreaker", fallbackMethod = "companyBreakerFallback")
+    @Retry(name = "companyBreaker", fallbackMethod = "companyBreakerFallback")
     public List<JobDTO> findAll() {
+        System.out.println("Attempts: " + ++attempts);
         List<Job> jobs = jobRepository.findAll();
         List<JobDTO> jobDTOS = new ArrayList<>();
 
@@ -52,6 +58,17 @@ public class JobServiceImpl implements JobService {
             jobDTOS.add(dto);
         }));
         return jobDTOS;
+    }
+
+    /**
+     * Fallback method
+     * @param e Exception
+     * @return list of string
+     */
+    public List<String> companyBreakerFallback(Exception e) {
+        List<String> list = new ArrayList<>();
+        list.add(e.getMessage());
+        return list;
     }
 
     /**

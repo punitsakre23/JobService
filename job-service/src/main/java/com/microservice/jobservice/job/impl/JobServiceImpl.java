@@ -9,8 +9,7 @@ import com.microservice.jobservice.job.dto.JobDTO;
 import com.microservice.jobservice.job.external.Company;
 import com.microservice.jobservice.job.external.Review;
 import com.microservice.jobservice.job.mapper.JobMapper;
-import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
-import io.github.resilience4j.retry.annotation.Retry;
+import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 import jakarta.ws.rs.NotFoundException;
 import org.springframework.stereotype.Service;
 
@@ -45,7 +44,8 @@ public class JobServiceImpl implements JobService {
      */
     @Override
 //    @CircuitBreaker(name = "companyBreaker", fallbackMethod = "companyBreakerFallback")
-    @Retry(name = "companyBreaker", fallbackMethod = "companyBreakerFallback")
+//    @Retry(name = "companyBreaker", fallbackMethod = "companyBreakerFallback")
+    @RateLimiter(name = "companyBreaker", fallbackMethod = "companyBreakerFallback")
     public List<JobDTO> findAll() {
         System.out.println("Attempts: " + ++attempts);
         List<Job> jobs = jobRepository.findAll();
